@@ -1,14 +1,21 @@
 require('dotenv').config()
-
 const mysql = require('mysql2')
 
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10
-})
+let db
+
+if (process.env.MYSQL_URL) {
+  // Railway — pakai connection URL
+  db = mysql.createPool(process.env.MYSQL_URL)
+} else {
+  // Lokal — pakai variabel terpisah
+  db = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10
+  })
+}
 
 module.exports = db
