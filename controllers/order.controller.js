@@ -79,20 +79,17 @@ exports.createOrder = async (req, res) => {
     status:     'pending'
   }
 
-  Order.create(data, async (err) => {
+Order.create(data, (err) => {
     if (err) {
       console.error('DB ERROR:', err)
       return res.status(500).json({ message: 'Gagal create order' })
     }
 
-    try {
-      await sendInvoiceEmail(data)
-      console.log('EMAIL SUCCESS')
-    } catch (emailErr) {
-      console.error('EMAIL ERROR:', emailErr.message)
-    }
+    res.json({ message: 'Order berhasil dibuat', order: data })
 
-    return res.json({ message: 'Order berhasil dibuat', order: data })
+      sendInvoiceEmail(data)
+      .then(() => console.log('EMAIL SUCCESS'))
+      .catch(emailErr => console.error('EMAIL ERROR:', emailErr.message))
   })
 }
 
