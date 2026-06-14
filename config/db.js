@@ -4,10 +4,8 @@ const mysql = require('mysql2')
 let db
 
 if (process.env.MYSQL_URL) {
-  // Railway — pakai connection URL
   db = mysql.createPool(process.env.MYSQL_URL)
 } else {
-  // Lokal — pakai variabel terpisah
   db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
