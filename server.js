@@ -6,7 +6,8 @@ const orderRoutes = require('./routes/order.routes')
 const adminRoutes = require('./routes/admin.routes')
 
 const app = express()
-
+app.set('trust proxy', 1)
+app.set('trust proxy', 1)
 // ─── Security Headers ───────────────────────────────────────────
 app.use(helmet())
 
