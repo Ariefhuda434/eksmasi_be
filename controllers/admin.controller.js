@@ -5,36 +5,32 @@ const { sendTicketEmail } = require('../utils/email')
 const { generateTicketPDF } = require('../utils/generateTicket')
 
 // ─── LOGIN ─────────────────────────────────────────────
-exports.login = (req, res) => {
+exports.login = async (req, res) => {
   const { username, password } = req.body
 
   if (!username || !password) {
-    return res.status(400).json({ message: 'Wajib isi username & password' })
+    return res.status(400).json({ message: 'Username dan password wajib diisi' })
   }
 
-  db.query(
-    'SELECT * FROM admins WHERE username = ?',
-    [username],
-    async (err, results) => {
-      if (err) return res.status(500).json({ message: 'DB error' })
-      if (!results.length) return res.status(401).json({ message: 'Invalid login' })
-
-      const admin = results[0]
-      const valid = await bcrypt.compare(password, admin.password)
-
-      if (!valid) {
-        return res.status(401).json({ message: 'Invalid login' })
-      }
-
-      const token = jwt.sign(
-        { id: admin.id, username: admin.username },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES }
-      )
-
-      res.json({ token, username: admin.username })
+  db.query('SELECT * FROM admins WHERE username = ?', [username], async (err, results) => {
+    if (err) {
+      console.error('DB LOGIN ERROR:', err.message, err.code)
+      return res.status(500).json({ message: 'DB error', detail: err.message })
     }
-  )
+    if (results.length === 0) return res.status(401).json({ message: 'Kredensial salah' })
+
+    const admin = results[0]
+    const valid = await bcrypt.compare(password, admin.password)
+    if (!valid) return res.status(401).json({ message: 'Kredensial salah' })
+
+    const token = jwt.sign(
+      { id: admin.id, username: admin.username },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES }
+    )
+
+    res.json({ token, username: admin.username })
+  })
 }
 
 // ─── GET ALL ORDERS ─────────────────────────────────────
