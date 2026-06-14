@@ -3,9 +3,11 @@ const fs = require('fs')
 const { generateTicketPDF } = require('./generateTicket')
 const createTransporter = () => nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
+  requireTLS: true,
   family: 4,
+  connectionTimeout: 10000,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
