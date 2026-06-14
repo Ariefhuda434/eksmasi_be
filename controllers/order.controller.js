@@ -14,22 +14,29 @@ function generateOrderId() {
   return `EXM-${date}-${suffix}`
 }
 
-// ─── Multer Upload Config ───────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => {
-    cb(null, `${req.params.id}-${Date.now()}${path.extname(file.originalname)}`)
-  }
+// ─── Cloudinary Upload Config ───────────────────────────────────
+const cloudinary = require('cloudinary').v2
+const { CloudinaryStorage } = require('multer-storage-cloudinary')
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+})
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: (req, file) => ({
+    folder: 'exmasi-proofs',
+    resource_type: 'auto',
+    public_id: `${req.params.id}-${Date.now()}`,
+    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf']
+  })
 })
 
 exports.upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|pdf/
-    const ext = path.extname(file.originalname).toLowerCase()
-    cb(null, allowed.test(ext))
-  }
+  limits: { fileSize: 5 * 1024 * 1024 }
 })
 
 // ─── Create Order ───────────────────────────────────────────────
@@ -138,7 +145,7 @@ exports.getOrder = (req, res) => {
 exports.uploadProof = (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'File tidak ditemukan' })
 
-  const filePath = `/uploads/${req.file.filename}`
+  const filePath = req.file.path // full Cloudinary URL
   const sql = 'UPDATE orders SET proof_url = ?, status = "uploaded" WHERE order_id = ?'
   db.query(sql, [filePath, req.params.id], (err) => {
     if (err) return res.status(500).json({ message: 'Gagal upload' })
