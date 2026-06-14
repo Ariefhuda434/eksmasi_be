@@ -1,53 +1,16 @@
-const dns = require('dns')
-dns.setDefaultResultOrder('ipv4first')
-
-const nodemailer = require('nodemailer')
+const { Resend } = require('resend')
 const fs = require('fs')
 const { generateTicketPDF } = require('./generateTicket')
 
-// ─── Resolve Gmail SMTP IPv4 Only ───────────────────────────────
-const getGmailSMTPIPv4 = async () => {
-  const addresses = await dns.promises.resolve4('smtp.gmail.com')
+const resend = new Resend(process.env.RESEND_API_KEY)
 
-  if (!addresses || addresses.length === 0) {
-    throw new Error('Tidak bisa resolve IPv4 smtp.gmail.com')
+const validateEmailEnv = () => {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY belum diset di environment variables')
   }
 
-  const smtpIPv4 = addresses[0]
-  console.log('SMTP IPv4 USED:', smtpIPv4)
-
-  return smtpIPv4
-}
-
-// ─── Create Transporter ─────────────────────────────────────────
-const createTransporter = async () => {
-  const smtpIPv4 = await getGmailSMTPIPv4()
-
-  return nodemailer.createTransport({
-    host: smtpIPv4,
-    port: 465,
-    secure: true,
-
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 60000,
-
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-
-    tls: {
-      servername: 'smtp.gmail.com',
-      minVersion: 'TLSv1.2'
-    }
-  })
-}
-
-// ─── Validasi Env ───────────────────────────────────────────────
-const validateEmailEnv = () => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('EMAIL_USER atau EMAIL_PASS belum diset di environment variables')
+  if (!process.env.EMAIL_FROM) {
+    throw new Error('EMAIL_FROM belum diset di environment variables')
   }
 
   if (!process.env.FRONTEND_URL) {
@@ -60,10 +23,8 @@ const sendInvoiceEmail = async (order) => {
   try {
     validateEmailEnv()
 
-    const transporter = await createTransporter()
-
-    await transporter.sendMail({
-      from: `"EXMASI TICKET" <${process.env.EMAIL_USER}>`,
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM,
       to: order.email,
       subject: `Invoice Tiket EXMASI - ${order.order_id}`,
       html: `
@@ -136,11 +97,10 @@ const sendTicketEmail = async (order) => {
     validateEmailEnv()
 
     pdfPath = await generateTicketPDF(order)
+    const pdfBuffer = fs.readFileSync(pdfPath)
 
-    const transporter = await createTransporter()
-
-    await transporter.sendMail({
-      from: `"EXMASI TICKET" <${process.env.EMAIL_USER}>`,
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM,
       to: order.email,
       subject: `E-Tiket EXMASI — ${order.order_id}`,
       html: `
@@ -192,7 +152,7 @@ const sendTicketEmail = async (order) => {
       attachments: [
         {
           filename: `tiket-${order.order_id}.pdf`,
-          path: pdfPath
+          content: pdfBuffer
         }
       ]
     })
