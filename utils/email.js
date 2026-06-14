@@ -5,13 +5,28 @@ const nodemailer = require('nodemailer')
 const fs = require('fs')
 const { generateTicketPDF } = require('./generateTicket')
 
-// ─── Transporter Gmail SMTP via IPv4 ────────────────────────────
-const createTransporter = () => {
+// ─── Resolve Gmail SMTP IPv4 Only ───────────────────────────────
+const getGmailSMTPIPv4 = async () => {
+  const addresses = await dns.promises.resolve4('smtp.gmail.com')
+
+  if (!addresses || addresses.length === 0) {
+    throw new Error('Tidak bisa resolve IPv4 smtp.gmail.com')
+  }
+
+  const smtpIPv4 = addresses[0]
+  console.log('SMTP IPv4 USED:', smtpIPv4)
+
+  return smtpIPv4
+}
+
+// ─── Create Transporter ─────────────────────────────────────────
+const createTransporter = async () => {
+  const smtpIPv4 = await getGmailSMTPIPv4()
+
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    host: smtpIPv4,
     port: 465,
     secure: true,
-    family: 4,
 
     connectionTimeout: 30000,
     greetingTimeout: 30000,
@@ -29,18 +44,25 @@ const createTransporter = () => {
   })
 }
 
+// ─── Validasi Env ───────────────────────────────────────────────
+const validateEmailEnv = () => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('EMAIL_USER atau EMAIL_PASS belum diset di environment variables')
+  }
+
+  if (!process.env.FRONTEND_URL) {
+    throw new Error('FRONTEND_URL belum diset di environment variables')
+  }
+}
+
 // ─── Invoice saat order dibuat ──────────────────────────────────
 const sendInvoiceEmail = async (order) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      throw new Error('EMAIL_USER atau EMAIL_PASS belum diset di environment variables')
-    }
+    validateEmailEnv()
 
-    if (!process.env.FRONTEND_URL) {
-      throw new Error('FRONTEND_URL belum diset di environment variables')
-    }
+    const transporter = await createTransporter()
 
-    await createTransporter().sendMail({
+    await transporter.sendMail({
       from: `"EXMASI TICKET" <${process.env.EMAIL_USER}>`,
       to: order.email,
       subject: `Invoice Tiket EXMASI - ${order.order_id}`,
@@ -111,17 +133,13 @@ const sendTicketEmail = async (order) => {
   let pdfPath
 
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      throw new Error('EMAIL_USER atau EMAIL_PASS belum diset di environment variables')
-    }
-
-    if (!process.env.FRONTEND_URL) {
-      throw new Error('FRONTEND_URL belum diset di environment variables')
-    }
+    validateEmailEnv()
 
     pdfPath = await generateTicketPDF(order)
 
-    await createTransporter().sendMail({
+    const transporter = await createTransporter()
+
+    await transporter.sendMail({
       from: `"EXMASI TICKET" <${process.env.EMAIL_USER}>`,
       to: order.email,
       subject: `E-Tiket EXMASI — ${order.order_id}`,
