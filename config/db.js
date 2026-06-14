@@ -4,7 +4,12 @@ const mysql = require('mysql2')
 let db
 
 if (process.env.MYSQL_URL) {
-  db = mysql.createPool(process.env.MYSQL_URL)
+  db = mysql.createPool({
+    uri: process.env.MYSQL_URL,
+    waitForConnections: true,
+    connectionLimit: 10,
+    ssl: { rejectUnauthorized: false }
+  })
 } else {
   db = mysql.createPool({
     host: process.env.DB_HOST,
