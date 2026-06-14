@@ -1,15 +1,16 @@
 const nodemailer = require('nodemailer')
 const fs = require('fs')
 const { generateTicketPDF } = require('./generateTicket')
-// console.log("TYPE generateTicketPDF:", typeof generateTicketPDF)
 const createTransporter = () => nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  family: 4, // force IPv4, Railway gak support IPv6 outbound
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 })
-console.log("generateTicketPDF TYPE:", typeof generateTicketPDF)
 // ─── Invoice saat order dibuat ──────────────────────────────────
 const sendInvoiceEmail = async (order) => {
   await createTransporter().sendMail({
