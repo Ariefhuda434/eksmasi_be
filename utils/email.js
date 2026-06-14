@@ -256,7 +256,7 @@ const sendTicketEmail = async (order) => {
 
     const result = await sendGmailHtmlWithAttachment({
       to: order.email,
-      subject: `E-Tiket EXMASI — ${order.order_id}`,
+      subject: `E-Tiket EXMASI - ${order.order_id}`,
       html,
       attachmentPath: pdfPath,
       attachmentName: `tiket-${order.order_id}.pdf`
