@@ -10,7 +10,6 @@ const adminRoutes = require('./routes/admin.routes')
 
 const app = express()
 app.set('trust proxy', 1)
-app.set('trust proxy', 1)
 // ─── Security Headers ───────────────────────────────────────────
 app.use(helmet())
 
@@ -26,8 +25,8 @@ app.use('/uploads', express.static('uploads'))
 
 // ─── Rate Limiters ──────────────────────────────────────────────
 const orderLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
+  windowMs: 5 * 60 * 1000,
+  max: 10,
   message: { message: 'Terlalu banyak percobaan order. Coba lagi dalam 15 menit.' },
   standardHeaders: true,
   legacyHeaders: false,
