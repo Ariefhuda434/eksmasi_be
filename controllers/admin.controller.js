@@ -7,9 +7,13 @@ const { generateTicketPDF } = require('../utils/generateTicket')
 // ─── PACKAGE PRICE MAP ─────────────────────────────────
 // Pastikan ini sama dengan data/ticketPackages.js di frontend
 const PRICE_MAP = {
-  basic: 50000,
-  trio: 120000,
-  vip: 200000
+  Single: 25000,
+  Duo: 45000,
+  Trio: 70000,
+  Squad: 90000,
+  Mates: 140000,
+  Party: 190000,
+  Bersapma: 350000
 }
 
 const getPackagePrice = (packageId) => {
@@ -19,9 +23,13 @@ const getPackagePrice = (packageId) => {
 // SQL CASE untuk hitung revenue langsung dari DB
 const REVENUE_CASE_SQL = `
   CASE 
-    WHEN status = 'confirmed' AND package_id = 'basic' THEN 50000
-    WHEN status = 'confirmed' AND package_id = 'trio' THEN 120000
-    WHEN status = 'confirmed' AND package_id = 'vip' THEN 200000
+    WHEN status = 'confirmed' AND package_id = 'Single' THEN 25000
+    WHEN status = 'confirmed' AND package_id = 'Duo' THEN 45000
+    WHEN status = 'confirmed' AND package_id = 'Trio' THEN 70000
+    WHEN status = 'confirmed' AND package_id = 'Squad' THEN 90000
+    WHEN status = 'confirmed' AND package_id = 'Mates' THEN 140000
+    WHEN status = 'confirmed' AND package_id = 'Party' THEN 190000
+    WHEN status = 'confirmed' AND package_id = 'Bersapma' THEN 350000
     ELSE 0
   END
 `
@@ -289,11 +297,11 @@ exports.downloadTicketPDF = async (req, res) => {
 
     res.download(filePath, `ticket-${order.order_id}.pdf`, (err) => {
       if (err) {
-        console.error('❌ Download error:', err)
+        console.error('Download error:', err)
       }
     })
   } catch (error) {
-    console.error('💥 Generate PDF GAGAL:', error)
+    console.error('Generate PDF GAGAL:', error)
 
     if (!res.headersSent) {
       res.status(500).json({
